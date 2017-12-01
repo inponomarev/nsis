@@ -1,0 +1,42 @@
+- name: install prerequisites
+  apt:
+    name: [unzip, scons, gcc, g++, zlib1g-dev]
+    update_cache: yes
+        
+- name: download binaries
+  unarchive:
+    src: https://sourceforge.net/projects/nsis/files/NSIS%203/{{ nsisver }}/nsis-{{ nsisver }}.zip/download
+    dest: /opt
+    remote_src: yes
+    creates: /opt/nsis-{{ nsisver }}
+    
+- name: download sources
+  unarchive:
+    src: https://sourceforge.net/projects/nsis/files/NSIS%203/{{ nsisver }}/nsis-{{ nsisver }}-src.tar.bz2/download
+    dest: /opt
+    remote_src: yes
+    creates: /opt/nsis-{{ nsisver }}-src
+
+- name: build sources
+  command: "scons SKIPSTUBS=all SKIPPLUGINS=all SKIPUTILS=all SKIPMISC=all NSIS_CONFIG_CONST_DATA=no PREFIX=/opt/nsis-{{ nsisver }} install-compiler"
+  args:
+    chdir: /opt/nsis-{{ nsisver }}-src
+    creates: /opt/nsis-{{ nsisver }}/bin/makensis
+  
+- name: create share folder
+  file:
+    path: /opt/nsis-{{ nsisver }}/share
+    state: directory
+    mode: "0755"
+
+- name: create symlink
+  file:
+    dest: /opt/nsis-{{ nsisver }}/share/nsis
+    src: /opt/nsis-{{ nsisver }}
+    state: link
+
+- name: create symlink to executable
+  file:
+    dest: /usr/local/bin/makensis
+    src: /opt/nsis-{{ nsisver }}/bin/makensis
+    state: link
